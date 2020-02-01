@@ -1,0 +1,674 @@
+#: import Magnet kivy.garden.magnet.Magnet
+#: import icon kivy.garden.iconfonts.icon
+#: import MaterialWidget customs.customs.MaterialWidget
+#: import Graph vendor.graph.Graph
+
+<MainWindow>:
+    orientation: 'vertical'
+    Container:
+        size_hint_y: .06
+        elevation: 1
+        padding: [sp(10), sp(3)]
+        Label:
+            size_hint_x: .3
+            text: '| Overview'
+            # font_size: sp(18)
+            font_name: 'app/assets/fonts/Roboto-Black.ttf'
+        Widget:
+        FlatButton:
+            size_hint_x: .1
+            font_size: sp(17)
+            text: icon('zmdi-more-vert')
+    ScreenManager:
+        id: scrn_mngr
+        size_hint_y: .89
+        Screen:
+            id: scrn_overview
+            name: 'scrn_overview'
+            BoxLayout:
+                BoxLayout:
+                    size_hint_y: 1
+                    orientation: 'vertical'
+                    ScrollView:
+                        size_hint_y: None
+                        height: self.parent.height
+                        GridLayout:
+                            cols: 1
+                            spacing: sp(30)
+                            padding: sp(15)
+                            size_hint_y: None
+                            height: self.minimum_height
+                            BoxLayout:
+                                size_hint_y: None
+                                height: sp(86)
+                                orientation: 'vertical'
+                                padding: [sp(10),0]
+                                Widget:
+                                    size_hint_y: .2
+                                Label:
+                                    text: 'Total Balance'
+                                    color: root.success
+                                    font_name: 'app/assets/fonts/Roboto-Black.ttf'
+                                    font_size: sp(12)
+                                    text_size: self.size
+                                    size_hint_y: .2
+                                    valign: 'bottom'
+                                Label:
+                                    text: '$5600[sup].95[/sup]'
+                                    markup: True
+                                    color: root.secondary
+                                    font_name: 'app/assets/fonts/UbuntuMono-R.ttf'
+                                    font_size: sp(32)
+                                    text_size: self.size
+                                    size_hint_y: .6
+                                    valign: 'top'
+                            Container:
+                                size_hint_y: None
+                                elevation: 4
+                                height: sp(400)
+                                spacing: sp(10)
+                                padding: sp(10)
+                                orientation: 'vertical'
+                                Container:
+                                    id: graph_wrapper
+                                    size_hint_y: .7
+                                    elevation: 1
+                                BoxLayout:
+                                    id: graph_summary
+                                    spacing: sp(10)
+                                    size_hint_y: .3
+                                    Container:
+                                        elevation: 3
+                                        orientation: 'vertical'
+                                        padding: [sp(10), sp(5)]
+                                        BoxLayout:
+                                            size_hint_y: .15
+                                            Label:
+                                                text: 'Current Month'
+                                                color: root.success
+                                                text_size: self.size
+                                                shorten: True
+                                                valign: 'middle'
+                                                font_name: 'app/assets/fonts/Roboto-Black.ttf'
+                                                font_size: sp(14)
+                                        BoxLayout:
+                                            size_hint_y: .85
+                                            spacing: sp(10)
+                                            padding: [sp(12), sp(4)]
+                                            FlatButton:
+                                                text: icon('zmdi-long-arrow-down')
+                                                size_hint_x: .2
+                                                color: root.danger
+                                                opacity: .6
+                                                font_size: sp(20)
+                                            Label:
+                                                id: last
+                                                text: '22.60[sup]%[/sup]'
+                                                markup: True
+                                                font_size: sp(32)
+                                                font_name: 'app/assets/fonts/UbuntuMono-R.ttf'
+                                                size_hint_x: .8
+                                                color: root.danger
+                                                opacity: .6
+                                    Container:
+                                        elevation: 3
+                                        orientation: 'vertical'
+                                        padding: [sp(10), sp(5)]
+                                        BoxLayout:
+                                            size_hint_y: .15
+                                            Label:
+                                                text: 'Last Month'
+                                                color: root.success
+                                                text_size: self.size
+                                                shorten: True
+                                                valign: 'middle'
+                                                font_name: 'app/assets/fonts/Roboto-Black.ttf'
+                                                font_size: sp(14)
+                                        BoxLayout:
+                                            size_hint_y: .85
+                                            spacing: sp(10)
+                                            padding: [sp(12), sp(4)]
+                                            FlatButton:
+                                                text: icon('zmdi-long-arrow-up')
+                                                size_hint_x: .2
+                                                color: root.success
+                                                opacity: .6
+                                                font_size: sp(20)
+                                            Label:
+                                                id: last
+                                                text: '30.60[sup]%[/sup]'
+                                                markup: True
+                                                font_size: sp(32)
+                                                font_name: 'app/assets/fonts/UbuntuMono-R.ttf'
+                                                size_hint_x: .8
+                                                color: root.success
+                                                opacity: .6
+
+                            Container:
+                                id: overview_history_wrapper
+                                size_hint_y: None
+                                elevation: 3
+                                padding: [sp(10), sp(4)]
+                                height: sp(80)
+                                orientation: 'vertical'
+                                BoxLayout:
+                                    size_hint_y: .07
+                                    padding: [sp(10), sp(3)]
+                                    Label:
+                                        text: 'Wallet History'
+                                        size_hint_x: .4
+                                        font_name: 'app/assets/fonts/Roboto-Black.ttf'
+                                        color: root.success
+                                        # text_size: self.size
+                                    Widget:
+                                    FlatButton:
+                                        text: 'clear all'
+                                        size_hint_x: .2
+                                        color: root.danger
+                                BoxLayout:
+                                    size_hint_y: .93
+
+                                    ScrollView:
+                                        size_hint_y: None
+                                        height: self.parent.height
+                                        GridLayout:
+                                            id: overview_history
+                                            size_hint_y: None
+                                            height: self.minimum_height
+        Screen:
+            id: scrn_cards
+            name: 'scrn_cards'
+            BoxLayout:
+                orientation: 'vertical'
+                padding: [sp(10)]
+                ScrollView:
+                    size_hint_y: None
+                    scroll_type: ['content']
+                    bar_width: 0
+                    height: self.parent.height
+                    GridLayout:
+                        size_hint_y: None
+                        height: self.minimum_height
+                        cols: 1
+                        spacing: sp(15)
+                        BoxLayout:
+                            orientation: 'vertical'
+                            padding: [sp(15), sp(8)]
+                            size_hint_y: None
+                            height: sp(120)
+                            Label:
+                                text: 'Current Balance'
+                                color: root.success
+                                text_size: self.size
+                                font_name: 'app/assets/fonts/Roboto-Black.ttf'
+                                size_hint_y: .2
+                                valign: 'middle'
+                            Label:
+                                text: '$ 2950[sup].87[/sup]'
+                                text_size: self.size
+                                size_hint_y: .8
+                                markup: True
+                                font_size: sp(40)
+                                valign: 'top'
+                                font_name: 'app/assets/fonts/Roboto-Regular.ttf'
+                        BoxLayout:
+                            size_hint_y: None
+                            height: sp(200)
+                            padding: [sp(15), 0]
+                            orientation: 'vertical'
+                            BoxLayout:
+                                size_hint_y: .1
+                                FlatButton:
+                                    text: icon('zmdi-caret-left')
+                                    font_size: sp(32)
+                                    color: rgba('#ffffff42')
+                                    on_release: cards_wrapper.load_previous()
+                                FlatButton:
+                                    text: icon('zmdi-caret-right')
+                                    font_size: sp(32)
+                                    color: rgba('#ffffff42')
+                                    on_release: cards_wrapper.load_next()
+                            Container:
+                                elevation: 3
+                                size_hint_y: .9
+                                Carousel:
+                                    id: cards_wrapper
+                                    spacing: sp(15)
+                                    direction: 'right'
+
+                        Container:
+                            padding: [sp(15), sp(0)]
+                            orientation: 'vertical'
+                            size_hint_y: None
+                            height: sp(320)
+                            elevation: 3
+                            BoxLayout:
+                                size_hint_y: .2
+                                padding: [sp(10), sp(4)]
+                                Label:
+                                    text: 'Expenses'
+                                    color: root.success
+                                    font_name: 'app/assets/fonts/Roboto-Black.ttf'
+                                    size_hint_x: .2
+                                Widget:
+                                FlatButton:
+                                    text: 'export'
+                                    font_name: 'app/assets/fonts/Roboto-Black.ttf'
+                                    color: root.danger
+                                    size_hint_x: .2
+                            BoxLayout:
+                                size_hint_y: .8
+                                ScrollView:
+                                    size_hint_y: None
+                                    height: self.parent.height
+                                    GridLayout:
+                                        cols: 1
+                                        padding: sp(15)
+                                        spacing: sp(10)
+                                        size_hint_y: None
+                                        height: self.minimum_height
+                FloatingButton:
+                    id: add_new
+                    callback: root.add_expense
+        Screen:
+            id: scrn_stats
+            name: 'scrn_stats'
+            BoxLayout:
+                orientation: 'vertical'
+                BoxLayout:
+                    size_hint_y: .3
+                    orientation: 'vertical'
+                    padding: [sp(25), sp(4)]
+                    BoxLayout:
+                        size_hint_y: .15
+                        FlatButton:
+                            text: icon('zmdi-caret-left')
+                            color: rgba('#ffffff42')
+                            on_release: stats_cards.load_previous()
+                            font_size: sp(24)
+                        FlatButton:
+                            text: icon('zmdi-caret-right')
+                            color: rgba('#ffffff42')
+                            on_release: stats_cards.load_next()
+                            font_size: sp(24)
+                    Carousel:
+                        id: stats_cards
+                        size_hint_y: .85
+
+                BoxLayout:
+                    size_hint_y: .7
+                    ScrollView:
+                        size_hint_y: None
+                        height: self.parent.height
+                        GridLayout:
+                            cols: 1
+                            spacing: sp(20  )
+                            padding: sp(15)
+                            size_hint_y: None
+                            height: self.minimum_height
+                            Container:
+                                size_hint_y: None
+                                height: sp(200)
+                                elevation: 3
+                                orientation: 'vertical'
+                                BoxLayout:
+                                    size_hint_y: .1
+                                    Label:
+                                        text: 'Spending'
+                                        color: root.success
+                                        text_size: self.size
+                                        font_name: 'app/assets/fonts/Roboto-Black.ttf'
+                                        valign: 'middle'
+                                Magnet:
+                                    size_hint_y: .9
+                                    Graph:
+                                        id: stats_graph
+                                        xlabel: 'Day'
+                                        y_grid: True
+                                        x_grid_label: True
+                                        y_grid_label: True
+                                        xmin: -1
+                                        xmax: 30
+                                        ymin: -1
+                                        ymax: 200
+                                        font_size: sp(10)
+                                        label_options: {'color': rgba('ffffff42')}
+                                        draw_border: False
+                                        x_ticks_major: 2
+                                        x_ticks_minor: 0
+                                        tick_color: root.primary
+                                        y_ticks_major: 17
+                                        # y_ticks_minor: 1
+
+                            MaterialWidget:
+                                orientation: 'vertical'
+                                size_hint_y: None
+                                height: sp(200)
+                                spacing: sp(25)
+                                elevation: 1
+                                canvas.before:
+                                    Color:
+                                        rgba: root.primary
+                                    Rectangle:
+                                        pos: self.pos
+                                        size: self.size
+                                BoxLayout:
+                                    size_hint_y: .1
+                                    Label:
+                                        text: 'Recurring Expenses'
+                                        font_name: 'app/assets/fonts/Roboto-Black.ttf'
+                                        text_size: self.size
+                                        valign: 'middle'
+                                        color: root.success
+                                BoxLayout:
+                                    size_hint_y: .9
+                                    ScrollView:
+                                        size_hint_y: None
+                                        height: self.parent.height
+                                        GridLayout:
+                                            id: recurring_wrapper
+                                            cols: 1
+                                            spacing: sp(15)
+                                            padding: sp(5)
+                                            size_hint_y: None
+                                            height: self.minimum_height
+        Screen:
+            id: scrn_notifications
+            name: 'scrn_notifications'
+    BoxLayout:
+        id: tabs
+        size_hint_y: .05
+        padding: [sp(30), 0]
+        FlatToggle:
+            id: default_tab
+            text: icon('zmdi-balance-wallet')
+            group: 'tab'
+            on_release: scrn_mngr.current = 'scrn_overview'
+        FlatToggle:
+            text: icon('zmdi-card')
+            group: 'tab'
+            on_release: scrn_mngr.current = 'scrn_cards'
+        FlatToggle:
+            text: icon('zmdi-trending-up')
+            group: 'tab'
+            on_release: scrn_mngr.current = 'scrn_stats'
+        FlatToggle:
+            text: icon('zmdi-notifications-none')
+            group: 'tab'
+            on_release: scrn_mngr.current = 'scrn_notifications'
+
+<FloatingButton>:
+    Button:
+        text: icon('zmdi-plus')
+        markup: True
+        font_size: sp(18)
+        size: [sp(52), sp(42)]
+        size_hint: [None, None]
+        pos_hint: {'y': .2, 'x': .85}
+        background_color: [0,0,0,0]
+        background_normal: ''
+        on_release: root.trigger_release()
+        canvas.before:
+            Color:
+                rgba: rgba('#f50057')
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [sp(15), 0, sp(15), 0]
+
+<Card>:
+    BoxLayout:
+        padding: sp(15)
+        spacing: sp(15)
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: app.root.card_colors[2]
+            Rectangle:
+                pos: self.pos
+                size: self.size
+            Color:
+                rgba: rgba('#ffffff10')
+            Ellipse:
+                pos: [self.pos[0], self.pos[1]]
+                size: [self.size[1], self.size[1]]
+            Ellipse:
+                pos: [self.pos[0]+(.5*self.pos[0]), self.pos[1]+(.2*self.pos[1])]
+                size: [self.size[1]-(.7*self.size[1]), self.size[1]-(.7*self.size[1])]
+            Ellipse:
+                pos: [self.pos[0]+(.6*self.size[0]), self.pos[1]+(.4*self.pos[1])]
+                size: [self.size[1]-(.8*self.size[1]), self.size[1]-(.8*self.size[1])]
+        BoxLayout:
+            size_hint_y: .2
+            Label:
+                text: "XXXX XXXX XXXX %s"%root.num
+                size_hint_x: .8
+                text_size: self.size
+                valign: 'middle'
+                font_name: 'app/assets/fonts/UbuntuMono-R.ttf'
+            BoxLayout:
+                id: logo
+                size_hint_x: .2
+        BoxLayout:
+            size_hint_y: .6
+            orientation: 'vertical'
+            Label:
+                text: 'Balance'
+                text_size: self.size
+                valign: 'bottom'
+                font_name: 'app/assets/fonts/Roboto-Regular.ttf'
+                size_hint_y: .3
+            Label:
+                text: root.balance
+                text_size: self.size
+                font_size: sp(32)
+                valign: 'top'
+                markup: True
+                font_name: 'app/assets/fonts/UbuntuMono-R.ttf'
+                size_hint_y: .5
+        BoxLayout:
+            size_hint_y: .2
+            Label:
+                text: root.name
+                size_hint_x: .8
+                text_size: self.size
+                valign: 'middle'
+                font_name: 'app/assets/fonts/UbuntuMono-R.ttf'
+            Label:
+                text: root.exp
+                size_hint_x: .2
+                text_size: self.size
+                valign: 'middle'
+                font_name: 'app/assets/fonts/UbuntuMono-R.ttf'
+
+<Graph>:
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            id: graph
+            spacing: sp(10)
+            size_hint_y: .9
+        BoxLayout:
+            id: x_labels
+            size_hint_y: .1
+
+<Bar>:
+    font_name: 'app/assets/fonts/Roboto-Black.ttf'
+    shorten: True
+    font_size: sp(12)
+    # text_size: self.size
+    canvas.before:
+        Color:
+            rgba: app.root.danger
+        Rectangle:
+            pos: self.pos
+            size: self.size
+        PushMatrix
+        Rotate:
+            angle: 90
+            origin: self.center
+    canvas.after:
+        PopMatrix
+
+<FlatButton@Button>:
+    background_color: [0,0,0,0]
+    font_name: 'app/assets/fonts/Roboto-Black.ttf'
+    background_normal: ''
+    markup: True
+
+<FlatToggle>:
+    background_color: [0,0,0,0]
+    font_name: 'app/assets/fonts/Roboto-Black.ttf'
+    background_normal: ''
+    markup: True
+
+<MasterCard>:
+    canvas.before:
+        Color:
+            rgba: app.root.danger
+        Ellipse:
+            pos: self.pos
+            size: self.size[1], self.size[1]
+        Color:
+            rgba: rgba('#ffff0056')
+        Ellipse:
+            pos: [self.pos[0]+sp(12), self.pos[1]]
+            size: self.size[1], self.size[1]
+
+<ExpenseProgress>:
+    spacing: sp(10)
+    Magnet:
+        size_hint_x: .6
+        ProgressBar:
+            value: root.value
+            min: 0
+            max: root.max
+    Label:
+        text: root.name
+        font_name: 'app/assets/fonts/Roboto-Black.ttf'
+        size_hint_x: .4
+        text_size: self.size
+        color: rgba('#ffffff42')
+        shorten: True
+        shorten_from: 'left'
+        valign: 'middle'
+        font_size: sp(12)
+
+<Container>:
+    canvas.before:
+        Color:
+            rgba: root.primary
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<NewCard>:
+    spacing: sp(20)
+    padding: sp(15)
+    orientation: 'vertical'
+    OutlineInput:
+        id: name
+        hint_text: 'card name'
+        hint_text_color: rgba('#ffffff42')
+        foreground_color: rgba('#ffffff42')
+    BoxLayout:
+        spacing: sp(15)
+        CardInput:
+            id: num
+            hint_text: 'last 4 card digits'
+            hint_text_color: rgba('#ffffff42')
+            foreground_color: rgba('#ffffff42')
+            input_filter: 'int'
+            base_direction: 'rtl'
+            size_hint_x: .6
+
+        DateInput:
+            id: date
+            hint_text: 'expiry date'
+            size_hint_x: .4
+            hint_text_color: rgba('#ffffff42')
+            foreground_color: rgba('#ffffff42')
+            base_direction: 'rtl'
+    Spinner:
+        id: vendor
+        text: 'card vendor'
+        color: rgba('#ffffff85')
+        values: ['mastercard', 'visa']
+    Widget:
+    Widget:
+    FlatButton:
+        id: submit
+        text: 'Submit'
+        canvas.before:
+            Color:
+                rgba: app.root.card_colors[3]
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [sp(24), 0, sp(24), 0]
+
+<NewExpense>:
+    orientation: 'vertical'
+    padding: sp(15)
+    spacing: sp(15)
+    OutlineInput:
+        id: name
+        hint_text: 'name'
+        hint_text_color: rgba('#ffffff42')
+        foreground_color: rgba('#ffffff42')
+    OutlineInput:
+        id: cost
+        hint_text: 'cost'
+        input_filter: 'float'
+        size_hint_x: .4
+        hint_text_color: rgba('#ffffff42')
+        foreground_color: rgba('#ffffff42')
+    BoxLayout:
+        BoxLayout:
+            Label:
+                text: 'paid for: '
+                size_hint_x: .8
+                text_size: self.size
+                valign: 'middle'
+                halign: 'right'
+            CheckBox:
+                id: paid
+                state: 'down'
+                size_hint_x: .2
+        BoxLayout:
+            Label:
+                text: 'recurring: '
+                size_hint_x: .8
+                text_size: self.size
+                valign: 'middle'
+                halign: 'right'
+            CheckBox:
+                id: recurring
+                size_hint_x: .2
+    Spinner:
+        id: card
+        text: 'Expense Card'
+        values: [x[0] for x in app.root.cards]
+    OutlineInput:
+        id: day
+        hint_text: 'day paid'
+        hint_text_color: rgba('#ffffff42')
+        foreground_color: rgba('#ffffff42')
+    Widget:
+    FlatButton:
+        id: submit
+        text: 'Submit'
+        canvas.before:
+            Color:
+                rgba: app.root.card_colors[3]
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [sp(24), 0, sp(24), 0]
+
+<OutlineInput>:
+    background_normal: ''
+    background_active: ''
+    multiline: False
+    # base_direction
+    background_color: app.root.back
