@@ -2,6 +2,7 @@
 #: import icon kivy.garden.iconfonts.icon
 #: import MaterialWidget customs.customs.MaterialWidget
 #: import Graph vendor.graph.Graph
+#: import DatePicker vendor.datepicker.datepicker.DatePicker
 
 <MainWindow>:
     orientation: 'vertical'
@@ -40,7 +41,7 @@
                             height: self.minimum_height
                             BoxLayout:
                                 size_hint_y: None
-                                height: sp(86)
+                                height: sp(80)
                                 orientation: 'vertical'
                                 padding: [sp(10),0]
                                 Widget:
@@ -65,7 +66,7 @@
                             Container:
                                 size_hint_y: None
                                 elevation: 4
-                                height: sp(400)
+                                height: sp(370)
                                 spacing: sp(10)
                                 padding: sp(10)
                                 orientation: 'vertical'
@@ -149,10 +150,10 @@
                                 size_hint_y: None
                                 elevation: 3
                                 padding: [sp(10), sp(4)]
-                                height: sp(80)
+                                height: sp(140)
                                 orientation: 'vertical'
                                 BoxLayout:
-                                    size_hint_y: .07
+                                    size_hint_y: .1
                                     padding: [sp(10), sp(3)]
                                     Label:
                                         text: 'Wallet History'
@@ -166,13 +167,15 @@
                                         size_hint_x: .2
                                         color: root.danger
                                 BoxLayout:
-                                    size_hint_y: .93
-
+                                    size_hint_y: .9
                                     ScrollView:
                                         size_hint_y: None
                                         height: self.parent.height
                                         GridLayout:
                                             id: overview_history
+                                            cols: 1
+                                            padding: sp(15)
+                                            spacing: sp(15)
                                             size_hint_y: None
                                             height: self.minimum_height
         Screen:
@@ -197,14 +200,14 @@
                             size_hint_y: None
                             height: sp(120)
                             Label:
-                                text: 'Current Balance'
+                                text: 'Total Expenses'
                                 color: root.success
                                 text_size: self.size
                                 font_name: 'app/assets/fonts/Roboto-Black.ttf'
                                 size_hint_y: .2
                                 valign: 'middle'
                             Label:
-                                text: '$ 2950[sup].87[/sup]'
+                                id: card_expense_total
                                 text_size: self.size
                                 size_hint_y: .8
                                 markup: True
@@ -222,12 +225,12 @@
                                     text: icon('zmdi-caret-left')
                                     font_size: sp(32)
                                     color: rgba('#ffffff42')
-                                    on_release: cards_wrapper.load_previous()
+                                    on_release: root.view_expenses(cards_wrapper, False)
                                 FlatButton:
                                     text: icon('zmdi-caret-right')
                                     font_size: sp(32)
                                     color: rgba('#ffffff42')
-                                    on_release: cards_wrapper.load_next()
+                                    on_release: root.view_expenses(cards_wrapper, True)
                             Container:
                                 elevation: 3
                                 size_hint_y: .9
@@ -262,6 +265,7 @@
                                     size_hint_y: None
                                     height: self.parent.height
                                     GridLayout:
+                                        id: cards_expenses
                                         cols: 1
                                         padding: sp(15)
                                         spacing: sp(10)
@@ -284,12 +288,12 @@
                         FlatButton:
                             text: icon('zmdi-caret-left')
                             color: rgba('#ffffff42')
-                            on_release: stats_cards.load_previous()
+                            on_release: root.view_stats(stats_cards, False)
                             font_size: sp(24)
                         FlatButton:
                             text: icon('zmdi-caret-right')
                             color: rgba('#ffffff42')
-                            on_release: stats_cards.load_next()
+                            on_release: root.view_stats(stats_cards, True)
                             font_size: sp(24)
                     Carousel:
                         id: stats_cards
@@ -414,7 +418,7 @@
             RoundedRectangle:
                 pos: self.pos
                 size: self.size
-                radius: [sp(15), 0, sp(15), 0]
+                radius: [sp(15), sp(15), sp(15), 0]
 
 <Card>:
     BoxLayout:
@@ -547,6 +551,7 @@
         text: root.name
         font_name: 'app/assets/fonts/Roboto-Black.ttf'
         size_hint_x: .4
+        markup: True
         text_size: self.size
         color: rgba('#ffffff42')
         shorten: True
@@ -561,7 +566,7 @@
         Rectangle:
             pos: self.pos
             size: self.size
-
+    
 <NewCard>:
     spacing: sp(20)
     padding: sp(15)
@@ -582,19 +587,28 @@
             base_direction: 'rtl'
             size_hint_x: .6
 
-        DateInput:
+        DatePicker:
             id: date
             hint_text: 'expiry date'
             size_hint_x: .4
             hint_text_color: rgba('#ffffff42')
             foreground_color: rgba('#ffffff42')
             base_direction: 'rtl'
+            background_normal: ''
+            background_active: ''
+            multiline: False
+            background_color: app.root.back
+    OutlineInput:
+        id: balance
+        hint_text: 'balance'
+        hint_text_color: rgba('#ffffff42')
+        foreground_color: rgba('#ffffff42')
+        input_filter: 'float'
     Spinner:
         id: vendor
         text: 'card vendor'
         color: rgba('#ffffff85')
         values: ['mastercard', 'visa']
-    Widget:
     Widget:
     FlatButton:
         id: submit
@@ -648,12 +662,23 @@
     Spinner:
         id: card
         text: 'Expense Card'
-        values: [x[0] for x in app.root.cards]
-    OutlineInput:
-        id: day
-        hint_text: 'day paid'
-        hint_text_color: rgba('#ffffff42')
-        foreground_color: rgba('#ffffff42')
+        values: [' | '.join([x[0], x[2]]) for x in app.root.cards]
+    BoxLayout:
+        Label:
+            text: 'Date Paid:'
+            size_hint_x: .3
+            color: rgba('#ffffff42')
+        DatePicker:
+            id: day
+            size_hint_x: .7
+            include_day: 1
+            hint_text: 'day paid'
+            hint_text_color: rgba('#ffffff42')
+            foreground_color: rgba('#ffffff42')
+            background_normal: ''
+            background_active: ''
+            multiline: False
+            background_color: app.root.back
     Widget:
     FlatButton:
         id: submit
@@ -672,3 +697,91 @@
     multiline: False
     # base_direction
     background_color: app.root.back
+
+<NewDeposit>:
+    orientation: 'vertical'
+    spacing: sp(15)
+    padding: sp(15)
+    OutlineInput:
+        id: name
+        foreground_color: rgba('#ffffff42')
+        text: 'Bank Tranfer'
+        hint_text_color: rgba('#ffffff42')
+    OutlineInput:
+        id: amount
+        foreground_color: rgba('#ffffff42')
+        hint_text: 'deposit amount'
+        hint_text_color: rgba('#ffffff42')
+    Spinner:
+        id: card
+        text: 'Deposit Card'
+        values: [' | '.join([x[0], x[2]]) for x in app.root.cards]
+    DatePicker:
+        id: date
+        background_normal: ''
+        background_active: ''
+        multiline: False
+        # base_direction
+        background_color: app.root.back
+    Widget:
+    FlatButton:
+        id: submit
+        text: 'Submit'
+        canvas.before:
+            Color:
+                rgba: app.root.card_colors[3]
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [sp(24), 0, sp(24), 0]
+
+<ExpenseChip>:
+    elevation: 1
+    BoxLayout:
+        id: icon
+        size_hint_x: .2
+        canvas.before:
+            Color:
+                rgba: app.root.back
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [sp(6)]
+        Label:
+            text: root.icon
+            color: rgba('#ffffff42')
+            opacity: .7
+            markup: True
+    BoxLayout:
+        id: detail
+        orientation: 'vertical'
+        size_hint_x: .6
+        padding: [sp(8),0,0,0]
+        Label:
+            id: name
+            text: root.name
+            font_name: 'app/assets/fonts/Roboto-Black.ttf'
+            size_hint_y: .7
+            text_size: self.size
+            color: rgba('#ffffff75')
+            shorten: True
+            shorten_from: 'right'
+            valign: 'middle'
+        Label:
+            id: card
+            text: root.card
+            font_size: sp(10)
+            color: rgba('#ffffff42')
+            text_size: self.size
+            valign: 'middle'
+            font_name: 'app/assets/fonts/Roboto-Regular.ttf'
+            size_hint_y: .3
+    BoxLayout:
+        size_hint_x: .2
+        Label:
+            id: amount
+            text: root.amount
+            markup: True
+            color: app.root.danger
+            opacity: .6
+            font_name: 'app/assets/fonts/Roboto-Black.ttf'

@@ -6,6 +6,7 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.garden.magnet import Magnet
+from kivy.garden.iconfonts import icon
 from kivy.graphics import Color, Ellipse, Line, Rectangle, RoundedRectangle
 from kivy.metrics import dp, sp
 from kivy.properties import (ColorProperty, ListProperty, NumericProperty,StringProperty, ObjectProperty)
@@ -44,9 +45,20 @@ class Card(Magnet):
 
 class Container(MaterialWidget):
     primary = ColorProperty()
+    empty = NumericProperty(1)
     def __init__(self, **kw):
         super().__init__(**kw)
         self.primary = rgba("#2C323C")
+
+    #     self.bind(children=self.mod_children)
+    #
+    # def mod_children(self, inst, value):
+    #     if len(value) > 1 and self.empty == 1:
+    #         self.lbl = self.ids.empty_label
+    #         self.remove_widget(value[-1])
+    #         self.empty = 0
+    #     if len(value) == 0:
+    #         self.add_widget(self.lbl)
 
 
     def draw_back(self, dtx):
@@ -141,6 +153,10 @@ class CardInput(OutlineInput):
 
         return super().insert_text(s, from_undo=from_undo)
 
+class NewDeposit(Container):
+    def __init__(self, **kw):
+        super().__init__(**kw)
+
 class NewCard(Container):
     def __init__(self, **kw):
         super().__init__(**kw)
@@ -175,6 +191,14 @@ class FloatingButton(FloatLayout):
     def trigger_release(self):
         self.callback()
 
+class ExpenseChip(Container):
+    icon = StringProperty()
+    name = StringProperty()
+    card = StringProperty()
+    amount = StringProperty()
+    def __init__(self, **kw):
+        super().__init__(**kw)
+
 class FlatToggle(ToggleButton):
     def __init__(self, **kw):
         super().__init__(**kw)
@@ -189,20 +213,8 @@ class FlatToggle(ToggleButton):
     def on_state(self, inst, value):
         if value == 'normal':
             self.color = rgba('#ffffff')
-            # with self.canvas.before:
-            #     Color(rgba=rgba('#212232'))
-            #     RoundedRectangle(
-            #         pos=[self.pos[0], self.size[1]-2],
-            #         size=[self.size[0], 2],
-            #         radius=[2])
         else:
             self.color = App.get_running_app().root.success
-            # with self.canvas.before:
-            #     Color(rgba=rgba('#ffffff9f'))
-            #     RoundedRectangle(
-            #         pos=[self.pos[0], self.size[1]-2],
-            #         size=[self.size[0], 2],
-            #         radius=[2])
 
 class MainWindow(BoxLayout):
     primary = ColorProperty()
@@ -228,7 +240,7 @@ class MainWindow(BoxLayout):
             rgba("#f50057"),
             rgba("#ff31432b")]
         # self.primary = rgba("#242c3f")
-        self.cards = [('payoneer', 'mastercard', '6296', '05/22', '2096.12'), ('FNB Botswana', 'visa', '5697', '09/22', '920')]
+        self.cards = [('payoneer', 'mastercard', '6296', '05/22', '2096.12'), ('FNB Botswana', 'visa', '6200', '09/22', '920')]
 
         # expenses - (card, card_num, expense, cost, paid, recurring, day_paid)
         self.expenses = [
@@ -237,9 +249,23 @@ class MainWindow(BoxLayout):
         ('payoneer', '6296', 'Gold Pass', '5.65', '5.65', 'True', '11'),
         ('payoneer', '6296', 'namecheap', '32.56', '12.72', 'True', '15'),
         ('payoneer', '6296', 'Adidas ZX750', '118.00', '118.00', 'False', '4'),
-        ('payoneer', '6296', 'Xiaomi Smart Band', '9.99', '9.99', 'False', '10'),
-        ('payoneer', '6296', 'Internet', '20.00', '15.00', 'True', '7')
+        ('fnb botswana', '6200', 'Xiaomi Smart Band', '9.99', '9.99', 'False', '10'),
+        ('fnb botswana', '6200', 'Bluetooth Adapter', '1.29', '1.29', 'False', '19'),
+        ('fnb botswana', '6200', 'Airtime', '20', '10.29', 'False', '30'),
+        ('payoneer', '6296', 'Internet', '20.00', '15.00', 'True', '7'),
+        ('paypal prepaid', '2519', 'GoDaddy', '3.65', '3.65', 'True', '27')
         ]
+
+        self.all_expenses = dict()
+
+        for e in self.expenses:
+            key = ' | '.join([e[0].upper(), e[1]])
+            self.all_expenses[key] = list()
+
+        for e in self.expenses:
+            key = ' | '.join([e[0].upper(), e[1]])
+
+            self.all_expenses[key].append(e)
 
         self.primary = rgba("#2C323C")
         self.back = rgba("#282C34")
@@ -253,6 +279,34 @@ class MainWindow(BoxLayout):
         graph.draw_bar(data)
 
         self.ids.graph_wrapper.add_widget(graph)
+
+        tcard = ' | '.join([self.cards[0][0].upper(), self.cards[0][2]])
+        card_total = sum([float(x[4]) for x in self.all_expenses[tcard]])
+        total, cents = str(card_total).rsplit('.')
+        cents = '[size=%s].%s[/size]'%(int(sp(12)), cents)
+        self.ids.card_expense_total.text = ''.join(['$ ', total, cents])
+
+        for ex in self.all_expenses[tcard]:
+            ec = ExpenseChip()
+            ec.icon = icon('zmdi-store')
+            ec.card = ' | '.join([ex[0], ex[1]])
+            ec.name = ex[2]
+            ec.amount = ex[4]
+            ec.size_hint_y = None
+            ec.height = sp(42)
+
+            self.ids.cards_expenses.add_widget(ec)
+
+        for ex in self.expenses:
+            ec = ExpenseChip()
+            ec.icon = icon('zmdi-store')
+            ec.card = ' | '.join([ex[0], ex[1]])
+            ec.name = ex[2]
+            ec.amount = ex[4]
+            ec.size_hint_y = None
+            ec.height = sp(42)
+
+            self.ids.overview_history.add_widget(ec)
 
         for card in self.cards:
             c = Card()
@@ -287,10 +341,39 @@ class MainWindow(BoxLayout):
         #init tabs
         self.ids.default_tab.state = 'down'
 
+        tcard = ' | '.join([self.cards[0][0].upper(), self.cards[0][2]])
+        self.update_stats(self.all_expenses[tcard])
+
         # Add Recurring expenses
         # expenses - (card, card_num, expense, cost, paid, recurring, date_paid)
-        recurring = [x for x in self.expenses if x[5] == 'True']
-        points = [(int(x[6]), float(x[4])) for x in self.expenses]
+        recurring = [x for x in self.all_expenses[tcard] if x[5] == 'True']
+        # print(ipoints)
+
+        for r in recurring:
+            ep = ExpenseProgress()
+            ep.max = float(r[3])
+            ep.value = float(r[4])
+            ep.name = r[2].lower()
+            ep.size_hint_y = None
+            ep.height = sp(18)
+
+            self.ids.recurring_wrapper.add_widget(ep)
+
+    def update_stats(self, expenses):
+        ipoints = self.get_points(expenses)
+        ymax = max(ipoints, key=lambda x: x[1])[1]
+        xmax = max(ipoints, key=lambda x: x[0])
+
+        self.ids.stats_graph.y_ticks_major = math.ceil(ymax/9)
+        self.ids.stats_graph.ymax = ymax
+
+        self.plot = LinePlot(color=self.danger)
+        self.plot.line_width = 1.4
+        self.plot.points = ipoints
+        self.ids.stats_graph.add_plot(self.plot)
+
+    def get_points(self, expenses):
+        points = [(int(x[6]), float(x[4])) for x in expenses]
         points = sorted(points, key=lambda x: x[0])
 
         ipoints = points
@@ -310,28 +393,74 @@ class MainWindow(BoxLayout):
             ipoints.append((d[0][0], val))
 
         ipoints = sorted(ipoints, key=lambda x: x[0])
-        ymax = max(ipoints, key=lambda x: x[1])[1]
-        xmax = max(ipoints, key=lambda x: x[0])
 
-        self.ids.stats_graph.y_ticks_major = math.ceil(ymax/9)
-        self.ids.stats_graph.ymax = ymax
+        return ipoints
 
-        plot = LinePlot(color=self.danger)
-        plot.line_width = 2
-        plot.points = ipoints
-        self.ids.stats_graph.add_plot(plot)
-        # print(ipoints)
+    def view_stats(self, carousel, next=True):
+        try:
+            if next:
+                cname = carousel.next_slide.name
+                cnum = carousel.next_slide.num
+                carousel.load_next()
+            else:
+                cname = carousel.previous_slide.name
+                cnum = carousel.previous_slide.num
+                carousel.load_previous()
 
-        for r in recurring:
-            ep = ExpenseProgress()
-            ep.max = float(r[3])
-            ep.value = float(r[4])
-            ep.name = r[2].lower()
-            ep.size_hint_y = None
-            ep.height = sp(18)
+            tcard = ' | '.join([cname, cnum])
 
-            self.ids.recurring_wrapper.add_widget(ep)
+            # sample - ('paypal prepaid', '2519', 'GoDaddy', '3.65', '3.65', 'True', '27')
+            self.ids.stats_graph.remove_plot(self.plot)
+            self.update_stats(self.all_expenses[tcard])
 
+            self.ids.recurring_wrapper.clear_widgets()
+            recurring = [x for x in self.all_expenses[tcard] if x[5] == 'True']
+            # print(ipoints)
+
+            for r in recurring:
+                ep = ExpenseProgress()
+                ep.max = float(r[3])
+                ep.value = float(r[4])
+                ep.name = r[2].lower()
+                ep.size_hint_y = None
+                ep.height = sp(18)
+
+                self.ids.recurring_wrapper.add_widget(ep)
+        except AttributeError:
+            pass
+            # self.graph.remove_plot(self.plot)
+
+    def view_expenses(self, carousel, next=True):
+        try:
+            if next:
+                cname = carousel.next_slide.name
+                cnum = carousel.next_slide.num
+                carousel.load_next()
+            else:
+                cname = carousel.previous_slide.name
+                cnum = carousel.previous_slide.num
+                carousel.load_previous()
+
+            tcard = ' | '.join([cname, cnum])
+            card_total = sum([float(x[4]) for x in self.all_expenses[tcard]])
+            card_total = round(card_total,2)
+            total, cents = str(card_total).rsplit('.')
+            cents = '[size=%s].%s[/size]'%(int(sp(12)), cents)
+            self.ids.card_expense_total.text = ''.join(['$ ', total, cents])
+
+            self.ids.cards_expenses.clear_widgets()
+            for ex in self.all_expenses[tcard]:
+                ec = ExpenseChip()
+                ec.icon = icon('zmdi-store')
+                ec.card = ' | '.join([ex[0], ex[1]])
+                ec.name = ex[2]
+                ec.amount = ex[4]
+                ec.size_hint_y = None
+                ec.height = sp(42)
+
+                self.ids.cards_expenses.add_widget(ec)
+        except AttributeError:
+            pass
     def add_new(self, modal, add='card'):
         modal.dismiss()
 
@@ -342,6 +471,11 @@ class MainWindow(BoxLayout):
             nc.ids.submit.bind(on_release=lambda x: self.new_card(fv, nc))
 
             fv.add_widget(nc)
+        elif add == 'deposit':
+            nd = NewDeposit()
+            nd.ids.submit.bind(on_release=lambda x: self.new_deposit(fv, nd))
+
+            fv.add_widget(nd)
         else:
             ne = NewExpense()
             ne.ids.submit.bind(on_release=lambda x: self.new_expense(fv, ne))
@@ -352,22 +486,120 @@ class MainWindow(BoxLayout):
     def new_card(self, modal, obj):
         modal.dismiss()
 
+        name = obj.ids.name.text.upper()
+        num = obj.ids.num.text
+        vendor = obj.ids.vendor.text
+        exp = obj.ids.date.text
+        balance = obj.ids.balance.text
+
+        balance = balance if '.' in balance else '.'.join([balance, '00'])
+
+        bal, cents = balance.rsplit('.',1)
+
+        balance = '%s[size=%s].%s[/size]'%(bal, int(sp(14)), cents)
+
+        # ToDo: Add Card To DB
+        card = Card()
+        card.balance = balance
+        card.name = name
+        card.exp = exp
+        card.vendor = vendor
+        card.num = num
+
+        scard = Card()
+        scard.balance = balance
+        scard.name = name
+        scard.exp = exp
+        scard.vendor = vendor
+        scard.num = num
+
+        self.ids.cards_wrapper.add_widget(card)
+        self.ids.stats_cards.add_widget(scard)
+
+    def new_deposit(self, modal, obj):
+        modal.dismiss()
+
+        amount = obj.ids.amount.text
+        name = obj.ids.name.text
+        card = obj.ids.card.text
+        date = obj.ids.date.text
+
+        amount = amount if '.' in amount else '.'.join([amount, '00'])
+
+        bal, cents = amount.rsplit('.',1)
+
+        amount = '%s[size=%s].%s[/size]'%(bal, int(sp(14)), cents)
+
+        ec = ExpenseChip()
+        ec.icon = icon('zmdi-balance')
+        ec.card = card
+        ec.name = name
+        ec.amount = amount
+        ec.size_hint_y = None
+        ec.height = sp(42)
+        ec.ids.amount.color = rgba('#00ff00')
+
+        idx = len(self.ids.overview_history.children)
+        self.ids.overview_history.add_widget(ec, idx)
+
     def new_expense(self, modal, obj):
         modal.dismiss()
 
+        name = obj.ids.name.text
+        cost = obj.ids.cost.text
+        day = obj.ids.day.text
+        card = obj.ids.card.text
+        recurring = obj.ids.recurring.state
+        paid = obj.ids.paid.state
+
+        cost = cost if '.' in cost else '.'.join([cost, '00'])
+
+        bal, cents = cost.rsplit('.',1)
+
+        cost = '%s[size=%s].%s[/size]'%(bal, int(sp(14)), cents)
+
+
+        if recurring == 'down':
+            ep = ExpenseProgress()
+            ep.size_hint_y = None
+            ep.height = sp(18)
+
+            ep.name = name
+            ep.max = float(cost)
+            if paid == 'down':
+                ep.value = float(cost)
+            else:
+                ep.value = 0
+
+            self.ids.recurring_wrapper.add_widget(ep)
+
+        ec = ExpenseChip()
+        ec.icon = icon('zmdi-store')
+        ec.card = card
+        ec.name = name
+        ec.amount = cost
+        ec.size_hint_y = None
+        ec.height = sp(42)
+
+        idx = len(self.ids.overview_history.children)
+        self.ids.overview_history.add_widget(ec, idx)
+
     def add_expense(self):
-        print('Photoshp')
-        fv = ModalView(size_hint=[.6, .2], padding=sp(10))
+        fv = ModalView(size_hint=[.6, .3], padding=sp(10))
         btn_card = Button(text='Add New Card', background_color=rgba('#2073B5'), background_normal='')
         btn_card.bind(on_release=lambda x: self.add_new(fv, 'card'))
+
         btn_expense = Button(text='Add New Expense', background_color=rgba('#2073B5'), background_normal='')
         btn_expense.bind(on_release=lambda x: self.add_new(fv, 'expense'))
 
+        btn_deposit = Button(text='Add New Deposit', background_color=rgba('#2073B5'), background_normal='')
+        btn_deposit.bind(on_release=lambda x: self.add_new(fv, 'deposit'))
         ctn = Container(orientation='vertical')
         ctn.spacing = sp(15)
         ctn.elevation = 4
         ctn.add_widget(btn_card)
         ctn.add_widget(btn_expense)
+        ctn.add_widget(btn_deposit)
 
         fv.add_widget(ctn)
         fv.open()
