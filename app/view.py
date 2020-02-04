@@ -22,8 +22,10 @@ from kivy.utils import rgba
 
 from vendor.graph import BarPlot, LinePlot, MeshLinePlot, SmoothLinePlot
 from customs.customs import MaterialWidget
+from app.storage import Database
 
 class Card(Magnet):
+    card_id = NumericProperty()
     back = ColorProperty([0,0,1,1])
     name = StringProperty()
     vendor = StringProperty()
@@ -49,17 +51,6 @@ class Container(MaterialWidget):
     def __init__(self, **kw):
         super().__init__(**kw)
         self.primary = rgba("#2C323C")
-
-    #     self.bind(children=self.mod_children)
-    #
-    # def mod_children(self, inst, value):
-    #     if len(value) > 1 and self.empty == 1:
-    #         self.lbl = self.ids.empty_label
-    #         self.remove_widget(value[-1])
-    #         self.empty = 0
-    #     if len(value) == 0:
-    #         self.add_widget(self.lbl)
-
 
     def draw_back(self, dtx):
         with self.canvas.before:
@@ -192,6 +183,7 @@ class FloatingButton(FloatLayout):
         self.callback()
 
 class ExpenseChip(Container):
+    expense_id = NumericProperty()
     icon = StringProperty()
     name = StringProperty()
     card = StringProperty()
@@ -202,13 +194,6 @@ class ExpenseChip(Container):
 class FlatToggle(ToggleButton):
     def __init__(self, **kw):
         super().__init__(**kw)
-    #     Clock.schedule_once(self.init_view, .2)
-    #
-    # def init_view(self, dtx):
-    #     self.bind(color=self.change_color)
-    #
-    # def change_color(self, inst, value):
-    #     self.color = App.get_running_app().root.secondary
 
     def on_state(self, inst, value):
         if value == 'normal':
@@ -227,10 +212,12 @@ class MainWindow(BoxLayout):
 
     def __init__(self, **kw):
         super().__init__(**kw)
+        self.db = Database()
 
         Clock.schedule_once(self.init_view, .1)
         # Clock.schedule_once(lambda x: self.change_theme('light'), 5)
         # Clock.schedule_once(self.draw_card, 2)
+
 
     def init_view(self, dtx):
         self.card_colors = [
@@ -240,30 +227,23 @@ class MainWindow(BoxLayout):
             rgba("#f50057"),
             rgba("#ff31432b")]
         # self.primary = rgba("#242c3f")
-        self.cards = [('payoneer', 'mastercard', '6296', '05/22', '2096.12'), ('FNB Botswana', 'visa', '6200', '09/22', '920')]
+        self.sample = (0,'sample card | 0123', 'mastercard', '01/94', '2048.00')
+
+        self.cards = self.db.get_cards()
+        if len(self.cards) < 1:
+            self.cards.append(self.sample)
 
         # expenses - (card, card_num, expense, cost, paid, recurring, day_paid)
-        self.expenses = [
-        ('payoneer', '6296', 'Rent', '150.00', '150.00', 'True', '7'),
-        ('payoneer', '6296', 'DigitalOcean Credit', '5.00', '0.00', 'True','10'),
-        ('payoneer', '6296', 'Gold Pass', '5.65', '5.65', 'True', '11'),
-        ('payoneer', '6296', 'namecheap', '32.56', '12.72', 'True', '15'),
-        ('payoneer', '6296', 'Adidas ZX750', '118.00', '118.00', 'False', '4'),
-        ('fnb botswana', '6200', 'Xiaomi Smart Band', '9.99', '9.99', 'False', '10'),
-        ('fnb botswana', '6200', 'Bluetooth Adapter', '1.29', '1.29', 'False', '19'),
-        ('fnb botswana', '6200', 'Airtime', '20', '10.29', 'False', '30'),
-        ('payoneer', '6296', 'Internet', '20.00', '15.00', 'True', '7'),
-        ('paypal prepaid', '2519', 'GoDaddy', '3.65', '3.65', 'True', '27')
-        ]
+        self.expenses = []
 
         self.all_expenses = dict()
 
-        for e in self.expenses:
-            key = ' | '.join([e[0].upper(), e[1]])
+        for e in self.cards:
+            key = e[1].upper()
             self.all_expenses[key] = list()
 
         for e in self.expenses:
-            key = ' | '.join([e[0].upper(), e[1]])
+            key = ' | '.join([e[1].upper(), e[2]])
 
             self.all_expenses[key].append(e)
 
@@ -274,14 +254,20 @@ class MainWindow(BoxLayout):
         self.tertiary = rgba('#212232')
         self.success = rgba('#05a95c')
 
-        data = [10,40,50,20,45,68,12,9,45]
+        data = [float(x[4]) for x in self.expenses]
         graph = Graph()
         graph.draw_bar(data)
 
-        self.ids.graph_wrapper.add_widget(graph)
 
-        tcard = ' | '.join([self.cards[0][0].upper(), self.cards[0][2]])
-        card_total = sum([float(x[4]) for x in self.all_expenses[tcard]])
+        self.ids.graph_wrapper.add_widget(graph)
+        self.data_error(data, graph)
+
+        tcard = self.cards[0][1].upper()
+        card_total = sum([float(x[4]) for x in self.all_expenses[tcard.upper()]])
+
+        if card_total < 1:
+            card_total = '0.00'
+
         total, cents = str(card_total).rsplit('.')
         cents = '[size=%s].%s[/size]'%(int(sp(12)), cents)
         self.ids.card_expense_total.text = ''.join(['$ ', total, cents])
@@ -289,36 +275,39 @@ class MainWindow(BoxLayout):
         for ex in self.all_expenses[tcard]:
             ec = ExpenseChip()
             ec.icon = icon('zmdi-store')
-            ec.card = ' | '.join([ex[0], ex[1]])
+            ec.card = ' | '.join([ex[1], ex[2]])
             ec.name = ex[2]
             ec.amount = ex[4]
             ec.size_hint_y = None
             ec.height = sp(42)
 
             self.ids.cards_expenses.add_widget(ec)
+        self.data_error(self.all_expenses[tcard], self.ids.cards_expenses)
 
         for ex in self.expenses:
             ec = ExpenseChip()
             ec.icon = icon('zmdi-store')
-            ec.card = ' | '.join([ex[0], ex[1]])
+            ec.card = ' | '.join([ex[1], ex[2]])
             ec.name = ex[2]
             ec.amount = ex[4]
             ec.size_hint_y = None
             ec.height = sp(42)
 
             self.ids.overview_history.add_widget(ec)
+        self.data_error(self.all_expenses[tcard], self.ids.overview_history)
 
         for card in self.cards:
+            _card, num = card[1].rsplit(' | ',1)
             c = Card()
-            c.name = card[0].upper()
+            c.name = _card.upper()
             c.vendor = card[1]
-            c.num = card[2]
+            c.num = num
             c.exp = card[3]
 
             sc = Card()
-            sc.name = card[0].upper()
+            sc.name = _card
             sc.vendor = card[1]
-            sc.num = card[2]
+            sc.num = num
             sc.exp = card[3]
 
             balance = card[4] if '.' in card[4] else '.'.join([card[4], '00'])
@@ -331,7 +320,8 @@ class MainWindow(BoxLayout):
 
             self.ids.cards_wrapper.add_widget(c)
             self.ids.stats_cards.add_widget(sc)
-
+        self.data_error(self.cards, self.ids.stats_cards)
+        self.data_error(self.cards, self.ids.cards_wrapper)
             # ToDo - Allow rotation
             # if Window.width < Window.height or len(self.ids.cards_wrapper.children) > 0: #landscape mode
             #     break
@@ -341,28 +331,45 @@ class MainWindow(BoxLayout):
         #init tabs
         self.ids.default_tab.state = 'down'
 
-        tcard = ' | '.join([self.cards[0][0].upper(), self.cards[0][2]])
+        tcard = self.cards[0][1].upper()
         self.update_stats(self.all_expenses[tcard])
 
         # Add Recurring expenses
         # expenses - (card, card_num, expense, cost, paid, recurring, date_paid)
-        recurring = [x for x in self.all_expenses[tcard] if x[5] == 'True']
+        recurring = [x for x in self.all_expenses[tcard] if x[6] == 'True']
         # print(ipoints)
 
         for r in recurring:
             ep = ExpenseProgress()
-            ep.max = float(r[3])
-            ep.value = float(r[4])
-            ep.name = r[2].lower()
+            ep.max = float(r[4])
+            ep.value = float(r[5])
+            ep.name = r[3].lower()
             ep.size_hint_y = None
             ep.height = sp(18)
 
             self.ids.recurring_wrapper.add_widget(ep)
+        self.data_error(recurring, self.ids.recurring_wrapper)
+
+    def data_error(self, expenses, w):
+        lbl = Label(text='no data to show', shorten=True)
+        lbl.shorten_from='right'
+        lbl.color=rgba('#ffffff42')
+        lbl.text_size = lbl.size
+        lbl.valign = 'middle'
+        lbl.halign = 'center'
+
+        if len(expenses) == 0:
+
+            print(w)
+            w.add_widget(lbl)
 
     def update_stats(self, expenses):
         ipoints = self.get_points(expenses)
-        ymax = max(ipoints, key=lambda x: x[1])[1]
-        xmax = max(ipoints, key=lambda x: x[0])
+        try:
+            ymax = max(ipoints, key=lambda x: x[1])[1]
+            # xmax = max(ipoints, key=lambda x: x[0])
+        except ValueError:
+            ymax = 100
 
         self.ids.stats_graph.y_ticks_major = math.ceil(ymax/9)
         self.ids.stats_graph.ymax = ymax
@@ -373,7 +380,8 @@ class MainWindow(BoxLayout):
         self.ids.stats_graph.add_plot(self.plot)
 
     def get_points(self, expenses):
-        points = [(int(x[6]), float(x[4])) for x in expenses]
+        points = [(int(x[7].split('/',1)[0]), float(x[4])) for x in expenses]
+        points.insert(0, (0,0))
         points = sorted(points, key=lambda x: x[0])
 
         ipoints = points
@@ -396,71 +404,85 @@ class MainWindow(BoxLayout):
 
         return ipoints
 
-    def view_stats(self, carousel, next=True):
+    def view_stats(self, carousel, next=0):
         try:
-            if next:
+            if next == 0:
                 cname = carousel.next_slide.name
                 cnum = carousel.next_slide.num
                 carousel.load_next()
-            else:
+            elif next == 1:
                 cname = carousel.previous_slide.name
                 cnum = carousel.previous_slide.num
                 carousel.load_previous()
+            else:
+                cname = carousel.current_slide.name
+                cnum = carousel.current_slide.num
 
             tcard = ' | '.join([cname, cnum])
 
             # sample - ('paypal prepaid', '2519', 'GoDaddy', '3.65', '3.65', 'True', '27')
             self.ids.stats_graph.remove_plot(self.plot)
-            self.update_stats(self.all_expenses[tcard])
+            self.update_stats(self.all_expenses[tcard.upper()])
 
             self.ids.recurring_wrapper.clear_widgets()
-            recurring = [x for x in self.all_expenses[tcard] if x[5] == 'True']
+            recurring = [x for x in self.all_expenses[tcard.upper()] if x[6] == 'True']
             # print(ipoints)
 
             for r in recurring:
                 ep = ExpenseProgress()
-                ep.max = float(r[3])
-                ep.value = float(r[4])
-                ep.name = r[2].lower()
+                ep.max = float(r[4])
+                ep.value = float(r[5])
+                ep.name = r[3].lower()
                 ep.size_hint_y = None
                 ep.height = sp(18)
 
                 self.ids.recurring_wrapper.add_widget(ep)
+
+            self.data_error(recurring, self.ids.recurring_wrapper)
+
         except AttributeError:
             pass
             # self.graph.remove_plot(self.plot)
 
-    def view_expenses(self, carousel, next=True):
+    def view_expenses(self, carousel, next=0):
         try:
-            if next:
+            if next == 0:
                 cname = carousel.next_slide.name
                 cnum = carousel.next_slide.num
                 carousel.load_next()
-            else:
+            elif next == 1:
                 cname = carousel.previous_slide.name
                 cnum = carousel.previous_slide.num
                 carousel.load_previous()
+            else:
+                cname = carousel.current_slide.name
+                cnum = carousel.current_slide.num
 
             tcard = ' | '.join([cname, cnum])
-            card_total = sum([float(x[4]) for x in self.all_expenses[tcard]])
+            card_total = sum([float(x[5]) for x in self.all_expenses[tcard.upper()]])
+
             card_total = round(card_total,2)
+            if card_total == 0:
+                card_total = '0.00'
+
             total, cents = str(card_total).rsplit('.')
             cents = '[size=%s].%s[/size]'%(int(sp(12)), cents)
             self.ids.card_expense_total.text = ''.join(['$ ', total, cents])
 
             self.ids.cards_expenses.clear_widgets()
-            for ex in self.all_expenses[tcard]:
+            for ex in self.all_expenses[tcard.upper()]:
                 ec = ExpenseChip()
                 ec.icon = icon('zmdi-store')
-                ec.card = ' | '.join([ex[0], ex[1]])
-                ec.name = ex[2]
-                ec.amount = ex[4]
+                ec.card = ' | '.join([ex[1], ex[2]])
+                ec.name = ex[3]
+                ec.amount = ex[5]
                 ec.size_hint_y = None
                 ec.height = sp(42)
 
                 self.ids.cards_expenses.add_widget(ec)
         except AttributeError:
             pass
+
     def add_new(self, modal, add='card'):
         modal.dismiss()
 
@@ -492,29 +514,47 @@ class MainWindow(BoxLayout):
         exp = obj.ids.date.text
         balance = obj.ids.balance.text
 
-        balance = balance if '.' in balance else '.'.join([balance, '00'])
+        if len(name) > 3 and len(num) == 4 and vendor is not 'card vendor' and len(exp) > 3 and len(balance) > 1:
 
-        bal, cents = balance.rsplit('.',1)
+            balance = balance if '.' in balance else '.'.join([balance, '00'])
 
-        balance = '%s[size=%s].%s[/size]'%(bal, int(sp(14)), cents)
+            bal, cents = balance.rsplit('.',1)
 
-        # ToDo: Add Card To DB
-        card = Card()
-        card.balance = balance
-        card.name = name
-        card.exp = exp
-        card.vendor = vendor
-        card.num = num
+            balance = '%s[size=%s].%s[/size]'%(bal, int(sp(14)), cents)
 
-        scard = Card()
-        scard.balance = balance
-        scard.name = name
-        scard.exp = exp
-        scard.vendor = vendor
-        scard.num = num
+            m, y = exp.rsplit('/',1)
+            y = y[2:]
+            exp = '/'.join([m,y])
 
-        self.ids.cards_wrapper.add_widget(card)
-        self.ids.stats_cards.add_widget(scard)
+            # ToDo: Add Card To DB
+            # ('sample card', 'mastercard', '0123', '01/94', '2048.00')
+            key = ' | '.join([name.upper(), num])
+            new_card = [key, vendor, exp, balance]
+            cid = self.db.add_card(new_card)
+
+            if not cid == -1:
+                new_card.insert(0, cid)
+                self.cards.append(new_card)
+                self.all_expenses[key] = list()
+
+                card = Card()
+                card.card_id = cid
+                card.balance = balance
+                card.name = name
+                card.exp = exp
+                card.vendor = vendor
+                card.num = num
+
+                scard = Card()
+                scard.card_id = cid
+                scard.balance = balance
+                scard.name = name
+                scard.exp = exp
+                scard.vendor = vendor
+                scard.num = num
+
+                self.ids.cards_wrapper.add_widget(card)
+                self.ids.stats_cards.add_widget(scard)
 
     def new_deposit(self, modal, obj):
         modal.dismiss()
@@ -524,23 +564,38 @@ class MainWindow(BoxLayout):
         card = obj.ids.card.text
         date = obj.ids.date.text
 
-        amount = amount if '.' in amount else '.'.join([amount, '00'])
+        if len(amount) > 0 and len(name) > 2 and card is not 'Deposit Card':
 
-        bal, cents = amount.rsplit('.',1)
+            amount = amount if '.' in amount else '.'.join([amount, '00'])
 
-        amount = '%s[size=%s].%s[/size]'%(bal, int(sp(14)), cents)
+            bal, cents = amount.rsplit('.',1)
+            # expenses - (card, card_num, expense, cost, paid, recurring, day_paid)
+            c, n = card.rsplit(' | ',1)
+            new_expense = [c, n, name, amount, amount, 'False', date, False]
 
-        ec = ExpenseChip()
-        ec.icon = icon('zmdi-balance')
-        ec.card = card
-        ec.name = name
-        ec.amount = amount
-        ec.size_hint_y = None
-        ec.height = sp(42)
-        ec.ids.amount.color = rgba('#00ff00')
+            eid = self.db.add_expense(new_expense)
 
-        idx = len(self.ids.overview_history.children)
-        self.ids.overview_history.add_widget(ec, idx)
+            if not eid == -1:
+                new_expense.insert(0, eid)
+                self.expenses.append(new_expense)
+                self.all_expenses[card].append(new_expense)
+
+                amount = '%s[size=%s].%s[/size]'%(bal, int(sp(14)), cents)
+
+                ec = ExpenseChip()
+                ec.icon = icon('zmdi-balance')
+                ec.card = card
+                ec.name = name
+                ec.amount = amount
+                ec.size_hint_y = None
+                ec.height = sp(42)
+                ec.ids.amount.color = rgba('#00ff00')
+
+                idx = len(self.ids.overview_history.children)
+                self.ids.overview_history.add_widget(ec, idx)
+
+                self.view_stats(self.ids.stats_cards, -1)
+                self.view_expenses(self.ids.cards_wrapper, -1)
 
     def new_expense(self, modal, obj):
         modal.dismiss()
@@ -552,37 +607,52 @@ class MainWindow(BoxLayout):
         recurring = obj.ids.recurring.state
         paid = obj.ids.paid.state
 
-        cost = cost if '.' in cost else '.'.join([cost, '00'])
+        if len(cost) > 0 and len(name) > 2 and card is not 'Expense Card':
+            cost = cost if '.' in cost else '.'.join([cost, '00'])
+            _cost = cost
 
-        bal, cents = cost.rsplit('.',1)
+            bal, cents = cost.rsplit('.',1)
 
-        cost = '%s[size=%s].%s[/size]'%(bal, int(sp(14)), cents)
+            cost = '%s[size=%s].%s[/size]'%(bal, int(sp(14)), cents)
 
+            # expenses - (card, card_num, expense, cost, paid, recurring, day_paid)
+            c, n = card.rsplit(' | ',1)
+            new_expense = [c, n, name, _cost, _cost, 'False', day, True]
 
-        if recurring == 'down':
-            ep = ExpenseProgress()
-            ep.size_hint_y = None
-            ep.height = sp(18)
+            eid = self.db.add_expense(new_expense)
 
-            ep.name = name
-            ep.max = float(cost)
-            if paid == 'down':
-                ep.value = float(cost)
-            else:
-                ep.value = 0
+            if eid is not -1:
+                new_expense.insert(0, eid)
+                self.expenses.append(new_expense)
+                self.all_expenses[card.upper()].append(new_expense)
 
-            self.ids.recurring_wrapper.add_widget(ep)
+                if recurring == 'down':
+                    ep = ExpenseProgress()
+                    ep.size_hint_y = None
+                    ep.height = sp(18)
 
-        ec = ExpenseChip()
-        ec.icon = icon('zmdi-store')
-        ec.card = card
-        ec.name = name
-        ec.amount = cost
-        ec.size_hint_y = None
-        ec.height = sp(42)
+                    ep.name = name
+                    ep.max = float(cost)
+                    if paid == 'down':
+                        ep.value = float(cost)
+                    else:
+                        ep.value = 0
 
-        idx = len(self.ids.overview_history.children)
-        self.ids.overview_history.add_widget(ec, idx)
+                    self.ids.recurring_wrapper.add_widget(ep)
+
+                ec = ExpenseChip()
+                ec.icon = icon('zmdi-store')
+                ec.card = card
+                ec.name = name
+                ec.amount = cost
+                ec.size_hint_y = None
+                ec.height = sp(42)
+
+                idx = len(self.ids.overview_history.children)
+                self.ids.overview_history.add_widget(ec, idx)
+
+                self.view_stats(self.ids.stats_cards, -1)
+                self.view_expenses(self.ids.cards_wrapper, -1)
 
     def add_expense(self):
         fv = ModalView(size_hint=[.6, .3], padding=sp(10))

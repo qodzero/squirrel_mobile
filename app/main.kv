@@ -225,12 +225,12 @@
                                     text: icon('zmdi-caret-left')
                                     font_size: sp(32)
                                     color: rgba('#ffffff42')
-                                    on_release: root.view_expenses(cards_wrapper, False)
+                                    on_release: root.view_expenses(cards_wrapper, 1)
                                 FlatButton:
                                     text: icon('zmdi-caret-right')
                                     font_size: sp(32)
                                     color: rgba('#ffffff42')
-                                    on_release: root.view_expenses(cards_wrapper, True)
+                                    on_release: root.view_expenses(cards_wrapper, 0)
                             Container:
                                 elevation: 3
                                 size_hint_y: .9
@@ -288,12 +288,12 @@
                         FlatButton:
                             text: icon('zmdi-caret-left')
                             color: rgba('#ffffff42')
-                            on_release: root.view_stats(stats_cards, False)
+                            on_release: root.view_stats(stats_cards, 1)
                             font_size: sp(24)
                         FlatButton:
                             text: icon('zmdi-caret-right')
                             color: rgba('#ffffff42')
-                            on_release: root.view_stats(stats_cards, True)
+                            on_release: root.view_stats(stats_cards, 0)
                             font_size: sp(24)
                     Carousel:
                         id: stats_cards
@@ -376,6 +376,7 @@
                                             padding: sp(5)
                                             size_hint_y: None
                                             height: self.minimum_height
+
         Screen:
             id: scrn_notifications
             name: 'scrn_notifications'
@@ -566,7 +567,11 @@
         Rectangle:
             pos: self.pos
             size: self.size
-    
+        Rectangle:
+            size: self.size
+            pos: self.pos
+            source: 'app/assets/imgs/no_data.png'
+
 <NewCard>:
     spacing: sp(20)
     padding: sp(15)
@@ -662,7 +667,7 @@
     Spinner:
         id: card
         text: 'Expense Card'
-        values: [' | '.join([x[0], x[2]]) for x in app.root.cards]
+        values: [x[1] for x in app.root.cards if not x[0] == 0]
     BoxLayout:
         Label:
             text: 'Date Paid:'
@@ -715,7 +720,7 @@
     Spinner:
         id: card
         text: 'Deposit Card'
-        values: [' | '.join([x[0], x[2]]) for x in app.root.cards]
+        values: [x[1] for x in app.root.cards if not x[0] == 0]
     DatePicker:
         id: date
         background_normal: ''
