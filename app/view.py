@@ -5,24 +5,26 @@ import re
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.garden.magnet import Magnet
 from kivy.garden.iconfonts import icon
+from kivy.garden.magnet import Magnet
 from kivy.graphics import Color, Ellipse, Line, Rectangle, RoundedRectangle
 from kivy.metrics import dp, sp
-from kivy.properties import (ColorProperty, ListProperty, NumericProperty,StringProperty, ObjectProperty)
+from kivy.properties import (ColorProperty, ListProperty, NumericProperty,
+                             ObjectProperty, StringProperty)
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
-from kivy.uix.textinput import TextInput
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
 from kivy.uix.modalview import ModalView
+from kivy.uix.textinput import TextInput
 from kivy.uix.togglebutton import ToggleButton
 from kivy.utils import rgba
 
-from vendor.graph import BarPlot, LinePlot, MeshLinePlot, SmoothLinePlot
-from customs.customs import MaterialWidget
 from app.storage import Database
+from customs.customs import MaterialWidget
+from vendor.graph import BarPlot, LinePlot, MeshLinePlot, SmoothLinePlot
+
 
 class Card(Magnet):
     card_id = NumericProperty()
@@ -44,6 +46,8 @@ class Card(Magnet):
             lbl.font_name = 'app/assets/fonts/Roboto-BlackItalic.ttf'
             self.ids.logo.add_widget(lbl)
 
+    def on_balance(self, inst, value):
+        self.ids.balance.text = str(value)
 
 class Container(MaterialWidget):
     primary = ColorProperty()
@@ -229,12 +233,12 @@ class MainWindow(BoxLayout):
         # self.primary = rgba("#242c3f")
         self.sample = (0,'sample card | 0123', 'mastercard', '01/94', '2048.00')
 
-        self.cards = self.db.get_cards()
+        self.cards = [list(x) for x in self.db.get_cards()]
         if len(self.cards) < 1:
             self.cards.append(self.sample)
 
         # expenses - (card, card_num, expense, cost, paid, recurring, day_paid)
-        self.expenses = []
+        self.expenses = self.db.get_expenses()
 
         self.all_expenses = dict()
 
@@ -256,14 +260,14 @@ class MainWindow(BoxLayout):
 
         data = [float(x[4]) for x in self.expenses]
         graph = Graph()
-        graph.draw_bar(data)
+        if len(data) > 2:
+            graph.draw_bar(data)
 
-
-        self.ids.graph_wrapper.add_widget(graph)
+            self.ids.graph_wrapper.add_widget(graph)
         self.data_error(data, graph)
 
         tcard = self.cards[0][1].upper()
-        card_total = sum([float(x[4]) for x in self.all_expenses[tcard.upper()]])
+        card_total = sum([float(x[4]) for x in self.all_expenses[tcard.upper()] if x[8] == 'True'])
 
         if card_total < 1:
             card_total = '0.00'
@@ -276,22 +280,24 @@ class MainWindow(BoxLayout):
             ec = ExpenseChip()
             ec.icon = icon('zmdi-store')
             ec.card = ' | '.join([ex[1], ex[2]])
-            ec.name = ex[2]
+            ec.name = ex[3]
             ec.amount = ex[4]
             ec.size_hint_y = None
             ec.height = sp(42)
+            ec.ids.amount.color = rgba('#00ff00') if ex[8] == 'False' else self.danger
 
             self.ids.cards_expenses.add_widget(ec)
         self.data_error(self.all_expenses[tcard], self.ids.cards_expenses)
 
         for ex in self.expenses:
             ec = ExpenseChip()
-            ec.icon = icon('zmdi-store')
+            ec.icon = icon('zmdi-store') if ex[8] == 'True' else icon('zmdi-balance')
             ec.card = ' | '.join([ex[1], ex[2]])
-            ec.name = ex[2]
+            ec.name = ex[3]
             ec.amount = ex[4]
             ec.size_hint_y = None
             ec.height = sp(42)
+            ec.ids.amount.color = rgba('#00ff00') if ex[8] == 'False' else self.danger
 
             self.ids.overview_history.add_widget(ec)
         self.data_error(self.all_expenses[tcard], self.ids.overview_history)
@@ -299,14 +305,16 @@ class MainWindow(BoxLayout):
         for card in self.cards:
             _card, num = card[1].rsplit(' | ',1)
             c = Card()
+            c.card_id = card[0]
             c.name = _card.upper()
-            c.vendor = card[1]
+            c.vendor = card[2]
             c.num = num
             c.exp = card[3]
 
             sc = Card()
+            sc.card_id = card[0]
             sc.name = _card
-            sc.vendor = card[1]
+            sc.vendor = card[2]
             sc.num = num
             sc.exp = card[3]
 
@@ -459,7 +467,7 @@ class MainWindow(BoxLayout):
                 cnum = carousel.current_slide.num
 
             tcard = ' | '.join([cname, cnum])
-            card_total = sum([float(x[5]) for x in self.all_expenses[tcard.upper()]])
+            card_total = sum([float(x[5]) for x in self.all_expenses[tcard.upper()] if x[8] == 'True'])
 
             card_total = round(card_total,2)
             if card_total == 0:
@@ -478,6 +486,7 @@ class MainWindow(BoxLayout):
                 ec.amount = ex[5]
                 ec.size_hint_y = None
                 ec.height = sp(42)
+                ec.ids.amount.color = rgba('#00ff00') if ex[8] == 'False' else self.danger
 
                 self.ids.cards_expenses.add_widget(ec)
         except AttributeError:
@@ -553,8 +562,20 @@ class MainWindow(BoxLayout):
                 scard.vendor = vendor
                 scard.num = num
 
-                self.ids.cards_wrapper.add_widget(card)
-                self.ids.stats_cards.add_widget(scard)
+                cw = self.ids.cards_wrapper
+                sc = self.ids.stats_cards
+                cw.add_widget(card)
+                sc.add_widget(scard)
+
+                for c in cw.slides:
+                    if c.card_id == 0:
+                        cw.remove_widget(c)
+
+                for c in sc.slides:
+                    if c.card_id == 0:
+                        sc.remove_widget(c)
+
+
 
     def new_deposit(self, modal, obj):
         modal.dismiss()
@@ -571,16 +592,35 @@ class MainWindow(BoxLayout):
             bal, cents = amount.rsplit('.',1)
             # expenses - (card, card_num, expense, cost, paid, recurring, day_paid)
             c, n = card.rsplit(' | ',1)
-            new_expense = [c, n, name, amount, amount, 'False', date, False]
+            new_expense = [c, n, name, amount, amount, 'False', date, 'False']
 
             eid = self.db.add_expense(new_expense)
 
             if not eid == -1:
+                for c in self.cards:
+                    if c[1] == card:
+                        prev_bal, prev_cent = c[4].split('[',1)
+                        prev_cent = prev_cent.split(']',1)[1].split('[',1)[0]
+
+                        prev_bal = ''.join([prev_bal, prev_cent])
+                        _balance = round(float(prev_bal) + float(amount), 3)
+                        c[4] = str(round(_balance,3))
+                        break
+
+                for c in self.ids.cards_wrapper.slides:
+                    name = ' | '.join([c.name, c.num])
+                    if name == card:
+                        _b,_c = str(_balance).rsplit('.',1)
+                        _bal = "%s[size=%s].%s[/size]"%(_b,int(sp(10)),_c)
+
+                        c.balance = _bal
+                        self.db.update_card((_bal, c.card_id))
+
                 new_expense.insert(0, eid)
                 self.expenses.append(new_expense)
                 self.all_expenses[card].append(new_expense)
-
                 amount = '%s[size=%s].%s[/size]'%(bal, int(sp(14)), cents)
+
 
                 ec = ExpenseChip()
                 ec.icon = icon('zmdi-balance')
@@ -617,11 +657,35 @@ class MainWindow(BoxLayout):
 
             # expenses - (card, card_num, expense, cost, paid, recurring, day_paid)
             c, n = card.rsplit(' | ',1)
-            new_expense = [c, n, name, _cost, _cost, 'False', day, True]
+            if recurring == 'down':
+                sub = 'True'
+            else:
+                sub = 'False'
+
+            new_expense = [c, n, name, _cost, _cost, sub, day, 'True']
 
             eid = self.db.add_expense(new_expense)
 
             if eid is not -1:
+                for c in self.cards:
+                    if c[1] == card:
+                        prev_bal, prev_cent = c[4].split('[',1)
+                        prev_cent = prev_cent.split(']',1)[1].split('[',1)[0]
+
+                        prev_bal = ''.join([prev_bal, prev_cent])
+                        _balance = round(float(prev_bal) - float(_cost), 3)
+                        c[4] = str(round(_balance,3))
+                        break
+
+                for c in self.ids.cards_wrapper.slides:
+                    name = ' | '.join([c.name, c.num])
+                    if name == card:
+                        _b,_c = str(_balance).rsplit('.',1)
+                        _bal = "%s[size=%s].%s[/size]"%(_b,int(sp(10)),_c)
+
+                        c.balance = _bal
+                        self.db.update_card((_bal, c.card_id))
+
                 new_expense.insert(0, eid)
                 self.expenses.append(new_expense)
                 self.all_expenses[card.upper()].append(new_expense)
@@ -632,9 +696,9 @@ class MainWindow(BoxLayout):
                     ep.height = sp(18)
 
                     ep.name = name
-                    ep.max = float(cost)
+                    ep.max = float(_cost)
                     if paid == 'down':
-                        ep.value = float(cost)
+                        ep.value = float(_cost)
                     else:
                         ep.value = 0
 

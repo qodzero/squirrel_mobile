@@ -155,3 +155,21 @@ class Database(object):
         except Exception as e:
             print(e)
             return -1
+
+    def update_card(self, card: tuple):
+        conn = self.db_connect()
+        cur = conn.cursor()
+        print(card[1])
+        sql = '''
+            UPDATE cards
+            SET balance=?
+            WHERE id=?
+        '''
+
+        try:
+            cur.execute(sql, card)
+            conn.commit()
+            return True
+        except Exception as e:
+            print(e)
+            return False
