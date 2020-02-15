@@ -1,7 +1,7 @@
 SQUIRREL - Finance Tracking
 =============================
 
-This app is primarily created to show how flexible (kivy)[https://www.kivy.org] is.
+This app is primarily created to show how flexible [kivy](https://www.kivy.org) is.
 on the other hand, I really wanted to make an app I could use everyday and one which
 could serve as a playground for my kivy exploration and also showcase, whats possible with 
 it so far.
