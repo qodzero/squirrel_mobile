@@ -224,6 +224,14 @@ class MainWindow(BoxLayout):
 
 
     def init_view(self, dtx):
+
+        self.primary = rgba("#2C323C")
+        self.back = rgba("#282C34")
+        self.danger = rgba('#ff003f')
+        self.secondary = rgba('#ffffff')
+        self.tertiary = rgba('#212232')
+        self.success = rgba('#05a95c')
+
         self.card_colors = [
             rgba("#ff621b"),
             rgba("#ff5722"),
@@ -231,16 +239,19 @@ class MainWindow(BoxLayout):
             rgba("#f50057"),
             rgba("#ff31432b")]
         # self.primary = rgba("#242c3f")
+        # expenses - (card, card_num, expense, cost, paid, recurring, day_paid)
+        self.expenses = self.db.get_expenses()
+        self.all_expenses = dict()
         self.sample = (0,'sample card | 0123', 'mastercard', '01/94', '2048.00')
 
         self.cards = [list(x) for x in self.db.get_cards()]
         if len(self.cards) < 1:
             self.cards.append(self.sample)
 
-        # expenses - (card, card_num, expense, cost, paid, recurring, day_paid)
-        self.expenses = self.db.get_expenses()
-
-        self.all_expenses = dict()
+        self.total_balance = round(sum([float(x[4]) for x in self.cards]), 3)
+        bal, c = str(self.total_balance).rsplit('.',1)
+        bal = '%s[size=%s]%s[/size]'%(bal,int(sp(10)), c)
+        self.ids.total_bal.text = bal
 
         for e in self.cards:
             key = e[1].upper()
@@ -250,13 +261,6 @@ class MainWindow(BoxLayout):
             key = ' | '.join([e[1].upper(), e[2]])
 
             self.all_expenses[key].append(e)
-
-        self.primary = rgba("#2C323C")
-        self.back = rgba("#282C34")
-        self.danger = rgba('#ff003f')
-        self.secondary = rgba('#ffffff')
-        self.tertiary = rgba('#212232')
-        self.success = rgba('#05a95c')
 
         data = [float(x[4]) for x in self.expenses]
         graph = Graph()
@@ -527,6 +531,7 @@ class MainWindow(BoxLayout):
 
             balance = balance if '.' in balance else '.'.join([balance, '00'])
 
+            _balance = balance
             bal, cents = balance.rsplit('.',1)
 
             balance = '%s[size=%s].%s[/size]'%(bal, int(sp(14)), cents)
@@ -538,7 +543,7 @@ class MainWindow(BoxLayout):
             # ToDo: Add Card To DB
             # ('sample card', 'mastercard', '0123', '01/94', '2048.00')
             key = ' | '.join([name.upper(), num])
-            new_card = [key, vendor, exp, balance]
+            new_card = [key, vendor, exp, _balance]
             cid = self.db.add_card(new_card)
 
             if not cid == -1:
@@ -575,6 +580,11 @@ class MainWindow(BoxLayout):
                     if c.card_id == 0:
                         sc.remove_widget(c)
 
+                self.total_balance = round(sum([float(x[4]) for x in self.cards]), 3)
+                bal, c = str(self.total_balance).rsplit('.',1)
+                bal = '%s[size=%s]%s[/size]'%(bal,int(sp(10)), c)
+                self.ids.total_bal.text = bal
+
 
 
     def new_deposit(self, modal, obj):
@@ -599,10 +609,8 @@ class MainWindow(BoxLayout):
             if not eid == -1:
                 for c in self.cards:
                     if c[1] == card:
-                        prev_bal, prev_cent = c[4].split('[',1)
-                        prev_cent = prev_cent.split(']',1)[1].split('[',1)[0]
+                        prev_bal = c[4]
 
-                        prev_bal = ''.join([prev_bal, prev_cent])
                         _balance = round(float(prev_bal) + float(amount), 3)
                         c[4] = str(round(_balance,3))
                         break
@@ -614,13 +622,17 @@ class MainWindow(BoxLayout):
                         _bal = "%s[size=%s].%s[/size]"%(_b,int(sp(10)),_c)
 
                         c.balance = _bal
-                        self.db.update_card((_bal, c.card_id))
+                        self.db.update_card((_balance, c.card_id))
 
                 new_expense.insert(0, eid)
                 self.expenses.append(new_expense)
                 self.all_expenses[card].append(new_expense)
                 amount = '%s[size=%s].%s[/size]'%(bal, int(sp(14)), cents)
 
+                self.total_balance = round(sum([float(x[4]) for x in self.cards]), 3)
+                bal, c = str(self.total_balance).rsplit('.',1)
+                bal = '%s[size=%s]%s[/size]'%(bal,int(sp(10)), c)
+                self.ids.total_bal.text = bal
 
                 ec = ExpenseChip()
                 ec.icon = icon('zmdi-balance')
@@ -669,10 +681,7 @@ class MainWindow(BoxLayout):
             if eid is not -1:
                 for c in self.cards:
                     if c[1] == card:
-                        prev_bal, prev_cent = c[4].split('[',1)
-                        prev_cent = prev_cent.split(']',1)[1].split('[',1)[0]
-
-                        prev_bal = ''.join([prev_bal, prev_cent])
+                        prev_bal = c[4]
                         _balance = round(float(prev_bal) - float(_cost), 3)
                         c[4] = str(round(_balance,3))
                         break
@@ -684,11 +693,16 @@ class MainWindow(BoxLayout):
                         _bal = "%s[size=%s].%s[/size]"%(_b,int(sp(10)),_c)
 
                         c.balance = _bal
-                        self.db.update_card((_bal, c.card_id))
+                        self.db.update_card((_balance, c.card_id))
 
                 new_expense.insert(0, eid)
                 self.expenses.append(new_expense)
                 self.all_expenses[card.upper()].append(new_expense)
+
+                self.total_balance = round(sum([float(x[4]) for x in self.cards]), 3)
+                bal, c = str(self.total_balance).rsplit('.',1)
+                bal = '%s[size=%s]%s[/size]'%(bal,int(sp(10)), c)
+                self.ids.total_bal.text = bal
 
                 if recurring == 'down':
                     ep = ExpenseProgress()
